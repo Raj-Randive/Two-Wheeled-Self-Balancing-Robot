@@ -3,6 +3,8 @@
 #include <LMotorController.h>
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
+#include "Timer.h"
+Timer timer;
 
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
  #include "Wire.h"
@@ -32,13 +34,16 @@ double movingAngleOffset = 0.1;
 double input, output;
 
 //adjust these values to fit your own design
-double Kp = 250;   //60 // 150
-double Kd = 8; //2.2 // 6.1
-double Ki = 50; //270  // 60
+double Kp = 250;   //60 // 150  // 250 (WP)// 200(WP) // 350 //100
+double Kd = 8; //2.2 // 6.1   // 8  // 6 // 8  // 6.1
+double Ki = 60; //270  // 60  // 50  // 80 // 50  // 300
 PID pid(&input, &output, &setpoint, Kp, Ki, Kd, DIRECT);
 
-double motorSpeedFactorLeft = 0.6;
-double motorSpeedFactorRight = 1.0;
+double motorSpeedFactorLeft = 1;
+double motorSpeedFactorRight = 1;
+
+// double motorSpeedFactorLeft = 0.6;
+// double motorSpeedFactorRight = 1.0;
 
 //MOTOR CONTROLLER
 int ENA = 5;
@@ -58,6 +63,7 @@ void dmpDataReady()
 
 void setup()
 {
+  // timer.start();
  // join I2C bus (I2Cdev library doesn't do this automatically)
  #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
  Wire.begin();
@@ -71,11 +77,11 @@ void setup()
  devStatus = mpu.dmpInitialize();
 
  // supply your own gyro offsets here, scaled for min sensitivity
- mpu.setXGyroOffset(220);
+ mpu.setXGyroOffset(220); //220  //56
  // level check karna hai mpu and tune karo
- mpu.setYGyroOffset(76);
- mpu.setZGyroOffset(-85);
- mpu.setZAccelOffset(1788); // 1688 factory default for my test chip
+ mpu.setYGyroOffset(76); //76  //-180
+ mpu.setZGyroOffset(-85); //-85  //81
+ mpu.setZAccelOffset(1788); // 1688 factory default for my test chip  //1913
 
  // make sure it worked (returns 0 if so)
  if (devStatus == 0)
@@ -117,14 +123,39 @@ void loop()
  // if programming failed, don't try to do anything
  if (!dmpReady) return;
 
- // wait for MPU interrupt or extra packet(s) available
- while (!mpuInterrupt && fifoCount < packetSize)
+//  // wait for MPU interrupt or extra packet(s) available
+//  while (!mpuInterrupt && fifoCount < packetSize)
+//  {
+//     timer.start();
+// 	  while (timer.read() <= 5000){
+//  		//no mpu data - performing PID calculations and output to motors 
+//  		  pid.Compute();
+//  		  motorController.move(output, MIN_ABS_SPEED);
+// 	  }
+//     timer.stop();
+//     //no mpu data - performing PID calculations and output to motors 
+//     pid.Compute();
+//     motorController.move(output, MIN_ABS_SPEED);
+//  }
+
+// timer.resume();
+// double tem = timer.read();
+while (!mpuInterrupt && fifoCount < packetSize)
  {
- //no mpu data - performing PID calculations and output to motors 
- pid.Compute();
- motorController.move(output, MIN_ABS_SPEED);
- 
+// 	if (tem < 5000) {
+// 	setpoint = 172.50;
+// 	}
+// 	else if (tem >= 5000 && tem < 5500) {
+// 	setpoint = 170.00;
+// 	}
+// 	else {
+// 	setpoint = 172.50;
+// 	}
+	//no mpu data - performing PID calculations and output to motors 
+	pid.Compute();
+ 	motorController.move(output, MIN_ABS_SPEED);
  }
+// timer.pause();
 
  // reset interrupt flag and get INT_STATUS byte
  mpuInterrupt = false;

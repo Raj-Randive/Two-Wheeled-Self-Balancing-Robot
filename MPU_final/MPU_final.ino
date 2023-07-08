@@ -13,8 +13,8 @@ const int enbPin = 8;    // Enable pin for Motor B
 const int in3Pin = 10;   // Input pin 1 for Motor B
 const int in4Pin = 9;    // Input pin 2 for Motor B
 
-int16_t accX, accZ;
-float accAngle;
+int16_t accX, accZ, accY;
+float accAngle, accAngle2, accAngle3;
 
 void forward(int motorSpeed) {
   analogWrite(enaPin, motorSpeed);
@@ -55,21 +55,28 @@ void setup() {
 void loop() {  
   accZ = mpu.getAccelerationZ();
   accX = mpu.getAccelerationX();
+  accY = mpu.getAccelerationY();
    
   accAngle = atan2(accX, accZ) * RAD_TO_DEG;
+  accAngle2 = atan2(accY,accX) * RAD_TO_DEG;
+  accAngle3 = atan2(accZ,accY) * RAD_TO_DEG;
   
-  if (!isnan(accAngle)) {
-    Serial.println(accAngle);
-    int motorSpeed = abs(accAngle);
+  if (!isnan(accAngle) || !isnan(accAngle2) || !isnan(accAngle3)) {
+    Serial.print(accAngle);
+    Serial.print(" ");
+    Serial.print(accAngle2);
+    Serial.print(" ");
+    Serial.println(accAngle3);
+    // int motorSpeed = abs(accAngle);
     
-    if (accAngle > 0) {
-      Serial.print(accAngle);
-      forward(motorSpeed);
-    } 
-    else {
-      Serial.print(accAngle);
-      backward(motorSpeed);
-    }
+    // if (accAngle > 0) {
+    //   Serial.print(accAngle);
+    //   forward(motorSpeed);
+    // } 
+    // else {
+    //   Serial.print(accAngle);
+    //   backward(motorSpeed);
+    // }
     
     delay(100);
   }
